@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
 import { Edit, Search, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-const ProductsTable = ({ products }) => {
-  console.log(products);
+
+const ProductsTable = ({ products, onDelete }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredProducts, setFilteredProducts] = useState(products);
 
@@ -18,6 +18,10 @@ const ProductsTable = ({ products }) => {
 
     setFilteredProducts(filtered);
   };
+
+  useEffect(() => {
+    setFilteredProducts(products);
+  }, [products]);
 
   return (
     <motion.div
@@ -60,9 +64,9 @@ const ProductsTable = ({ products }) => {
           </thead>
 
           <tbody className="divide-y divide-[#ece3db]">
-            {filteredProducts.map((product) => (
+            {filteredProducts?.map((product, index) => (
               <motion.tr
-                key={product.id}
+                key={product?.productId}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
@@ -70,27 +74,30 @@ const ProductsTable = ({ products }) => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100 flex gap-2 items-center">
                   <div className="w-10 h-10 bg-white flex items-center justify-center rounded-full">
                     <img
-                      src={product.images[0]}
-                      alt={product.name}
-                      className="size-10 rounded-full object-contain"
+                      src={product?.images[0]}
+                      alt={product?.name}
+                      className="size-10 rounded-full object-cover"
                     />
                   </div>
-                  {product.name}
+                  {product?.name}
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
-                  {product.category}
+                  {product?.category}
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
-                  ${product.price.toFixed(2)}
+                  &#8377;{product?.price.toFixed(2)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
                   <button className="text-indigo-200 hover:text-indigo-300 mr-2">
                     <Edit size={18} />
                   </button>
                   <button className="text-red-500 hover:text-red-300">
-                    <Trash2 size={18} />
+                    <Trash2
+                      size={18}
+                      onClick={() => onDelete(product?.productId)}
+                    />
                   </button>
                 </td>
               </motion.tr>
