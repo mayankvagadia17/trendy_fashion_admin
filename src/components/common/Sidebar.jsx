@@ -5,7 +5,7 @@ import {
   Settings,
   ShoppingBag,
   ShoppingCart,
-  TrendingUp,
+  Grid2X2,
   Users,
 } from "lucide-react";
 import { useState } from "react";
@@ -19,12 +19,33 @@ const SIDEBAR_ITEMS = [
     color: "#ece3db",
     href: "/Home/overview",
   },
-  { name: "Products", icon: ShoppingBag, color: "#ece3db", href: "/Home/products" },
+  {
+    name: "Products",
+    icon: ShoppingBag,
+    color: "#ece3db",
+    href: "/Home/products",
+  },
+  {
+    name: "Category",
+    icon: Grid2X2,
+    color: "#ece3db",
+    href: "/Home/products",
+  },
   { name: "Users", icon: Users, color: "#ece3db", href: "/Home/users" },
   { name: "Sales", icon: DollarSign, color: "#ece3db", href: "/Home/sales" },
-  { name: "Orders", icon: ShoppingCart, color: "#ece3db", href: "/Home/orders" },
+  {
+    name: "Orders",
+    icon: ShoppingCart,
+    color: "#ece3db",
+    href: "/Home/orders",
+  },
   // { name: "Analytics", icon: TrendingUp, color: "#ece3db", href: "/Home/analytics" },
-  { name: "Settings", icon: Settings, color: "#ece3db", href: "/Home/settings" },
+  {
+    name: "Settings",
+    icon: Settings,
+    color: "#ece3db",
+    href: "/Home/settings",
+  },
 ];
 
 const Sidebar = () => {
