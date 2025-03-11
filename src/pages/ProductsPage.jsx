@@ -7,9 +7,7 @@ import StatCard from "../components/common/StatCard";
 
 import { Check, Package, X } from "lucide-react";
 import ProductsTable from "../components/products/ProductsTable";
-
-import { storage } from "../config";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import axios from "axios";
 
 const ProductsPage = () => {
   const [res, setData] = useState(null);
@@ -18,7 +16,7 @@ const ProductsPage = () => {
   const [category, setCategory] = useState(null);
   const [loading_category, setLoadingCategory] = useState(true);
 
-  const [Gender, setGender] = useState(["Man", "Woman", "Both"]);
+  const Gender = ["Man", "Woman", "Both"];
 
   const [isOpen, setIsOpen] = useState(false);
 
@@ -41,10 +39,34 @@ const ProductsPage = () => {
 
   // Image Upload State Management
   const [files, setFiles] = useState([]);
+  const [validFiles, setValidFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
 
+  const [errors, setErrors] = useState([]);
+
   const handleFileChange = (e) => {
-    setFiles(Array.from(e.target.files));
+    const files = Array.from(e.target.files);
+    const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+
+    let validImages = [];
+    let validImagesFiles = [];
+    let errorMessages = [];
+
+    files.forEach((file) => {
+      if (file.size > maxSize) {
+        errorMessages.push(`${file.name} exceeds 10MB`);
+      } else {
+        validImagesFiles.push(file);
+        validImages.push({
+          name: file.name,
+          url: URL.createObjectURL(file),
+        });
+      }
+    });
+
+    setFiles(validImagesFiles);
+    setValidFiles(validImages);
+    setErrors(errorMessages);
   };
 
   const handleUpload = async (e) => {
@@ -59,37 +81,35 @@ const ProductsPage = () => {
     const newURLs = [];
 
     for (let file of files) {
-      const fileExtension = file.name.split(".").pop();
-      const storageRef = ref(
-        storage,
-        `admin-uploads/${Date.now()}.${fileExtension}`
-      );
-      const uploadTask = uploadBytesResumable(storageRef, file);
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", "admin_uploads");
+      formData.append("folder", "Admin Uploads");
 
-      await new Promise((resolve, reject) => {
-        uploadTask.on(
-          "state_changed",
-          (snapshot) => {
-            const progress =
-              (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            setProgress(progress.toFixed(2));
-            console.log(`Upload is ${progress}% done`);
-          },
-          (error) => reject(error),
-          async () => {
-            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-            console.log(downloadURL);
-            newURLs.push(downloadURL);
-            resolve();
+      try {
+        const response = await axios.post(
+          `https://api.cloudinary.com/v1_1/djggag9gb/image/upload`,
+          formData,
+          {
+            onUploadProgress: (progressEvent) => {
+              const percentCompleted = Math.round(
+                (progressEvent.loaded * 100) / progressEvent.total
+              );
+              setProgress(percentCompleted);
+            },
           }
         );
-      });
+        newURLs.push(response.data.secure_url);
+      } catch (error) {
+        console.error("Upload error:", error);
+        alert("Upload failed!");
+      }
     }
     setUploadedURLs((prevURLs) => [...prevURLs, ...newURLs]);
     setUploading(false);
   };
 
-  async function addProduct(e) {
+  async function addProduct() {
     try {
       const imageString = JSON.stringify(uploadedURLs);
       const encodedImages = encodeURIComponent(imageString);
@@ -248,6 +268,8 @@ const ProductsPage = () => {
             <div className="grid grid-col-1 lg:grid-cols-2 gap-8">
               <button
                 onClick={() => {
+                  setFiles([]);
+                  setValidFiles([]);
                   setIsOpen(true);
                   setSelectedCategory("");
                 }}
@@ -378,13 +400,40 @@ const ProductsPage = () => {
                   <h5 className="text-black font-semibold mt-4 flex justify-start">
                     Upload Product Images
                   </h5>
-                  <div className="flex items-center justify-between">
-                    <input
-                      className="p-2 text-black"
-                      type="file"
-                      multiple
-                      onChange={handleFileChange}
-                    />
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <input
+                        className="text-black"
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleFileChange}
+                      />
+
+                      {/* Display Errors */}
+                      {errors.length > 0 && (
+                        <div style={{ color: "red" }}>
+                          {errors.map((error, index) => (
+                            <p key={index}>{error}</p>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Display Image Previews */}
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "10px",
+                          marginTop: "10px",
+                        }}
+                      >
+                        {validFiles.map((image, index) => (
+                          <div key={index}>
+                            <img src={image.url} alt={image.name} width="100" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                     {files.length > 0 && (
                       <p className="text-black px-5">
                         Upload Progress: {progress}%
@@ -403,6 +452,7 @@ const ProductsPage = () => {
                   <button
                     onClick={() => {
                       setFiles([]);
+                      setValidFiles([]);
                       setProgress(0);
                       setIsOpen(false);
                     }}
